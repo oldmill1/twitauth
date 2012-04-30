@@ -37,7 +37,7 @@
 		$tmhOAuth->config['user_token']  = $_SESSION['access_token']['oauth_token'];
 		$tmhOAuth->config['user_secret'] = $_SESSION['access_token']['oauth_token_secret'];
 	
-		if ( $_SESSION['user'] == null ) : 
+		if ( !isset($_SESSION['user']) || $_SESSION['user'] == null ) : 
 			$code = $tmhOAuth->request('GET', $tmhOAuth->url('1/account/verify_credentials')); 
 			echo "The code from the access token request is $code"; 
 			if ($code == 200) {
@@ -129,7 +129,7 @@ function get_followers( $ids ) {
 function get_followers_ids( $user ) { 
 	global $tmhOAuth; 
 	
-	if ( $_SESSION['ids'] == null ) : 
+	if ( !isset($_SESSION['ids']) || $_SESSION['ids'] == null ) : 
 		$ids = array(); 
 		$code = $tmhOAuth->request(	'GET', $tmhOAuth->url('1/followers/ids.json', ''), array( 'user_id' => $user->id ) ); 
 												
