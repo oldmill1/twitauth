@@ -101,7 +101,7 @@
 function get_followers( $ids ) { 
 	global $tmhOAuth;
 	
-	if ( $_SESSION['followers'] != null ) { 
+	if ( isset($_SESSION['followers']) && $_SESSION['followers'] != null ) { 
 		return $_SESSION['followers']; 
 	} else { 
 		$user_ids = implode(",", $ids); 
