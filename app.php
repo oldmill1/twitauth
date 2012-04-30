@@ -13,11 +13,11 @@
 	session_start();
 	
 	
-	if ( gettype($_SESSION['user']) == "object" ) { 
+	if ( isset( $_SESSION['user'] ) && gettype($_SESSION['user']) == "object" ) { 
 		$user = $_SESSION['user']; 
 	} 
 	
-	if ( gettype($_SESSION['ids']) == "array" ) { 
+	if ( isset( $_SESSION['ids'] ) && gettype($_SESSION['ids']) == "array" ) { 
 		$ids = $_SESSION['ids']; 
 	}
 	
