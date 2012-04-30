@@ -39,7 +39,6 @@
 	
 		if ( !isset($_SESSION['user']) || $_SESSION['user'] == null ) : 
 			$code = $tmhOAuth->request('GET', $tmhOAuth->url('1/account/verify_credentials')); 
-			echo "The code from the access token request is $code"; 
 			if ($code == 200) {
 				$user = json_decode($tmhOAuth->response['response']); 
 				$username = $user->screen_name; 
@@ -108,7 +107,6 @@ function get_followers( $ids ) {
 		$user_ids = implode(",", $ids); 
 		$code = $tmhOAuth->request( 'POST', $tmhOAuth->url('1/users/lookup.json', ''), array( 'user_id' => $user_ids ) ); 
 		if ( $code == 200 ) {
-			echo "The code from the followers is $code"; 
 			$data = json_decode($tmhOAuth->response['response'], true);
 			$_SESSION['followers'] = $data; 
 			return $data;  
@@ -137,7 +135,6 @@ function get_followers_ids( $user ) {
 			$data = json_decode($tmhOAuth->response['response'], true);
 			$ids = array_merge( $ids, $data['ids']); 
 			$_SESSION['ids'] = $ids; 
-			var_dump($_SESSION['ids']); 
 			return $ids; 
 		} else { 
 			outputError($tmhOAuth);
