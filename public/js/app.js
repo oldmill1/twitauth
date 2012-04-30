@@ -31,7 +31,7 @@
 		}; 
 		
 		$.post( 
-			'/twitauth/app.php', 
+			'/app.php', 
 			data, 
 			function( response ) { 
 				// todo: check if status exists before going deeper
