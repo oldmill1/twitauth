@@ -22,7 +22,7 @@
 	links.click( function(event) { 
 		event.preventDefault(); 
 		$(".alert").hide(); 
-		main.prepend("<img class='working' src='/twitauth/public/img/load.gif' />");
+		main.prepend("<img class='working' src='/public/img/load.gif' />");
 		 
 		id = $(this).parent().attr("id");
 		
