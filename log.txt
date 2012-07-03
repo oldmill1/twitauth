@@ -1,0 +1,8 @@
+Sun 4:30
+---------
+Refactored code to work with get_userdata_for. 
+This new step is cleaner than using get_data and get_followers. The AJAX calls have also been changed to reflect this. 
+
+Sun 4:41
+--------
+Created a depreciated.php file for keeping old functions no longer required by the program. 

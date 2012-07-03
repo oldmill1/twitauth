@@ -45,7 +45,7 @@
 							<ul id="users" class="nav nav-list">
 								<?php 
 								$ids = get_followers_ids( $user ); 
-								$followers = get_followers( $_SESSION['ids'] ); 
+								$followers = get_userdata_for( $_SESSION['ids'] ); 
 								echo "<li class='nav-header'>My Followers (".count($followers).")</li>"; 
 								foreach ( $followers as $follower ) : 
 								?> 

@@ -21,3 +21,7 @@ li.tweet-view:hover h2 {
 	text-decoration: underline;
 }
 
+.retweeted {
+	background: green !important;
+}
+

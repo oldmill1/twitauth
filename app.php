@@ -13,11 +13,11 @@
 	session_start();
 	
 	
-	if ( isset( $_SESSION['user'] ) && gettype($_SESSION['user']) == "object" ) { 
+	if ( gettype($_SESSION['user']) == "object" ) { 
 		$user = $_SESSION['user']; 
 	} 
 	
-	if ( isset( $_SESSION['ids'] ) && gettype($_SESSION['ids']) == "array" ) { 
+	if ( gettype($_SESSION['ids']) == "array" ) { 
 		$ids = $_SESSION['ids']; 
 	}
 	
@@ -37,8 +37,8 @@
 		$tmhOAuth->config['user_token']  = $_SESSION['access_token']['oauth_token'];
 		$tmhOAuth->config['user_secret'] = $_SESSION['access_token']['oauth_token_secret'];
 	
-		if ( !isset($_SESSION['user']) || $_SESSION['user'] == null ) : 
-			$code = $tmhOAuth->request('GET', $tmhOAuth->url('1/account/verify_credentials')); 
+		if ( $_SESSION['user'] == null ) : 
+			$code = $tmhOAuth->request('GET', $tmhOAuth->url('1/account/verify_credentials'));   
 			if ($code == 200) {
 				$user = json_decode($tmhOAuth->response['response']); 
 				$username = $user->screen_name; 
@@ -77,14 +77,10 @@
 		  'oauth_callback'     => $callback
 		);
 		
-		// request for a request token
 		$code = $tmhOAuth->request('POST', $tmhOAuth->url('oauth/request_token', ''), $params); 
 		
-		// request granted by Twitter 
 		if ( $code == 200 ) { 
-			// Twitter gives us the response in the oauth variable 
 			$_SESSION['oauth'] = $tmhOAuth->extract_params($tmhOAuth->response['response']); 
-			// we make a URL out of it, supplying the credentials Twitter gave us
 			$authurl = $tmhOAuth->url("oauth/authenticate", ""). "?oauth_token={$_SESSION['oauth']['oauth_token']}"; 
 			header( "Location: " . $authurl ); 
 		} else { 
@@ -93,28 +89,37 @@
 	} 
 
 /** 
- * Get extended information for the users who's IDs are passed 
+ * Wrapper for user/lookup. Lookup users via user ids. 
+ * Goes well with friends/ids. (I.e., get all the ids of your friends then get user data about them.) 
+ * Doesn't matter if you give it multiple ids (array) or just a single id (int). 
  * 
- * @param $ids array A list of IDs 
- * @return $data array Similiar to what's stored in $user, but for followers of $user
+ * @param array/int Either a comma-seperated array or just a single id. 
+ * @return $data array Information regarding the user or users
+ *  
 */ 
-function get_followers( $ids ) { 
-	global $tmhOAuth;
-	
-	if ( isset($_SESSION['followers']) && $_SESSION['followers'] != null ) { 
-		return $_SESSION['followers']; 
-	} else { 
-		$user_ids = implode(",", $ids); 
+function get_userdata_for( $lookup ) 
+{  	
+	global $tmhOAuth; 
+		if ( is_array( $lookup ) ) { 
+			if ( $_SESSION['followers'] != null ) { 
+					return $_SESSION['followers']; 
+			} else { 
+				$user_ids = implode(",", $lookup );
+			}  
+		} else { 
+			$user_ids = $lookup; 
+		}
 		$code = $tmhOAuth->request( 'POST', $tmhOAuth->url('1/users/lookup.json', ''), array( 'user_id' => $user_ids ) ); 
 		if ( $code == 200 ) {
 			$data = json_decode($tmhOAuth->response['response'], true);
-			$_SESSION['followers'] = $data; 
+			if ( $_SESSION['followers'] == null ) { 
+				$_SESSION['followers'] = $data;
+			}  
 			return $data;  
 		} else { 
 			outputError($tmhOAuth);
 		} 	
-	}
- 
+	
 } 
 
 /** 
@@ -127,7 +132,7 @@ function get_followers( $ids ) {
 function get_followers_ids( $user ) { 
 	global $tmhOAuth; 
 	
-	if ( !isset($_SESSION['ids']) || $_SESSION['ids'] == null ) : 
+	if ( $_SESSION['ids'] == null ) : 
 		$ids = array(); 
 		$code = $tmhOAuth->request(	'GET', $tmhOAuth->url('1/followers/ids.json', ''), array( 'user_id' => $user->id ) ); 
 												
@@ -135,6 +140,7 @@ function get_followers_ids( $user ) {
 			$data = json_decode($tmhOAuth->response['response'], true);
 			$ids = array_merge( $ids, $data['ids']); 
 			$_SESSION['ids'] = $ids; 
+			var_dump($_SESSION['ids']); 
 			return $ids; 
 		} else { 
 			outputError($tmhOAuth);
@@ -142,28 +148,49 @@ function get_followers_ids( $user ) {
 	endif; 
 } 
 
-/** 
- * Similiar to get followers, instead gets data for just 1 follower
- * 
- * @param $id string
-*/ 
-function get_data( $id ) { 
-	global $tmhOAuth; 
-	$code = $tmhOAuth->request( 'POST', $tmhOAuth->url('1/users/lookup.json', ''), array( 'user_id' => $id ) );
-	if ( $code == 200 ) {
-		$data = json_decode($tmhOAuth->response['response']);
-		return $data; 
-	} else { 
-		outputError($tmhOAuth);
-	} 	
-} 
 
+/*
+ * POST/AJAX API 
+*/ 
 if ( !empty( $_POST ) && !is_null( $_POST ) ) { 
 	extract( $_POST ); //imports $id; 
-	$data = get_data($id); 
-	exit(json_encode($data)); 
-} 
+	if ( $_POST['action'] == 'userdata' ) { 
+		$data = get_userdata_for($id); 
+		exit(json_encode($data)); 
+	} elseif ( $_POST['action'] == 'retweet' ) { 
+		$retweet = retweet( $id ); 
+		exit(json_encode($retweet)); 
+	} 
+}
 
+/** 
+ * Retweets a tweet. 
+ * 
+ * @param $tweet tweet_id 
+ * @return $data the retweeted tweet
+ * 
+ * todo: add custom text before (or after) the original tweet
+*/ 
+function retweet( $tweet_id )		
+{ 
+	 
+	global $tmhOAuth; 
+	
+	$request_url = $tmhOAuth->url("1/statuses/retweet/$tweet_id"); 
+	$params = array( 
+		// retweet params 
+	); 
+	 
+	$code = $tmhOAuth->request(	'POST', $request_url, $params );
+	if ( $code != 200 ) { 
+		// we have a problem...
+		outputError($tmhOAuth);
+	}  elseif ( $code == 200 ) { 
+		// succesfully retweeted
+		$data = $tmhOAuth->response['response']; 
+		exit(json_encode($data));
+	}
+} 
 
 
 
